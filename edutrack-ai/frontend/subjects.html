@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduTrack AI - Disciplinas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen">
+  <nav class="sticky top-0 z-40 navbar-dark">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <span class="brand-mark" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <h1 class="text-2xl font-bold">EduTrack AI</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleTheme()" class="icon-btn" title="Alternar tema" aria-label="Alternar tema"><span id="theme-toggle-icon"></span></button>
+          <button onclick="logout()" class="btn-soft px-4 py-2 text-sm">Sair</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <section class="card p-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p class="text-sm text-slate-400">Gerenciamento</p>
+          <h2 class="text-3xl font-bold mt-1">Disciplinas</h2>
+          <p class="text-slate-400 mt-1">Cadastre suas matérias com professor, carga horária, descrição e período letivo.</p>
+        </div>
+        <button id="open-create-modal-btn" class="btn-primary px-5 py-3 inline-flex items-center gap-2">
+          <span class="icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+          Nova Disciplina
+        </button>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3 bg-slate-900/60 rounded-2xl p-3 border border-slate-700/60">
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('index.html')">Dashboard</button>
+      <button class="nav-link btn-primary px-5 py-2.5 active" onclick="navigate('subjects.html')">Disciplinas</button>
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('tasks.html')">Tarefas</button>
+    </div>
+
+    <section class="card p-6 space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input id="search-input" type="text" placeholder="Buscar por nome ou professor...">
+        <select id="sort-select">
+          <option value="name_asc">Ordenar: Nome (A-Z)</option>
+          <option value="name_desc">Ordenar: Nome (Z-A)</option>
+          <option value="carga_desc">Carga horária (maior)</option>
+          <option value="carga_asc">Carga horária (menor)</option>
+          <option value="peso_desc">Peso (maior)</option>
+          <option value="peso_asc">Peso (menor)</option>
+        </select>
+        <button id="refresh-btn" class="btn-ghost px-4 py-2">Atualizar lista</button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span id="subjects-count" class="badge px-3 py-1 rounded-full text-sm">0 disciplinas</span>
+        <div class="flex gap-2">
+          <button id="view-cards-btn" class="btn-primary px-3 py-2 text-sm">Cartões</button>
+          <button id="view-table-btn" class="btn-ghost px-3 py-2 text-sm">Tabela</button>
+        </div>
+      </div>
+
+      <div id="subjects-empty-state" class="hidden empty-state text-center p-10">
+        <h4 class="text-xl font-semibold">Nenhuma disciplina encontrada</h4>
+        <p class="text-slate-400 mt-2">Crie sua primeira disciplina para estruturar seus estudos.</p>
+        <button onclick="document.getElementById('open-create-modal-btn').click()" class="btn-primary mt-4 px-4 py-2">Criar disciplina</button>
+      </div>
+
+      <div id="subjects-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+      <div id="subjects-table-wrapper" class="overflow-x-auto hidden">
+        <table class="min-w-full">
+          <thead class="table-head">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Nome</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Professor</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Carga</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Peso</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Período</th>
+              <th class="px-4 py-3 text-right text-xs uppercase tracking-wider text-slate-300">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="subjects-tbody" class="divide-y divide-slate-700"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="subject-modal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-xl modal-dark rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+          <h4 id="modal-title" class="text-xl font-bold">Nova Disciplina</h4>
+          <button id="close-modal-btn" class="text-slate-400 hover:text-slate-100 text-2xl leading-none" aria-label="Fechar">&times;</button>
+        </div>
+        <form id="subject-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <input type="hidden" id="subject-id">
+
+          <div>
+            <label for="subject-name" class="block text-sm font-medium mb-1">Nome da disciplina *</label>
+            <input id="subject-name" type="text" required placeholder="Ex.: Cálculo I">
+          </div>
+
+          <div>
+            <label for="subject-professor" class="block text-sm font-medium mb-1">Professor</label>
+            <input id="subject-professor" type="text" placeholder="Ex.: Prof. Ana Souza">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="subject-carga" class="block text-sm font-medium mb-1">Carga horária (h) *</label>
+              <input id="subject-carga" type="number" min="1" step="1" required placeholder="60">
+            </div>
+            <div>
+              <label for="subject-peso" class="block text-sm font-medium mb-1">Peso *</label>
+              <input id="subject-peso" type="number" min="0.1" step="0.1" required placeholder="1.0">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="subject-data-inicio" class="block text-sm font-medium mb-1">Data de início</label>
+              <input id="subject-data-inicio" type="date">
+            </div>
+            <div>
+              <label for="subject-data-fim" class="block text-sm font-medium mb-1">Data de término</label>
+              <input id="subject-data-fim" type="date">
+            </div>
+          </div>
+
+          <div>
+            <label for="subject-description" class="block text-sm font-medium mb-1">Descrição</label>
+            <textarea id="subject-description" rows="3" placeholder="Ementa, objetivos, observações..."></textarea>
+          </div>
+
+          <div class="pt-2 flex gap-3 justify-end">
+            <button type="button" id="cancel-modal-btn" class="btn-ghost px-4 py-2">Cancelar</button>
+            <button type="submit" id="save-subject-btn" class="btn-primary px-4 py-2">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let subjects = [];
+    let filteredSubjects = [];
+    let viewMode = 'cards';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setupModalHandlers();
+      setupFiltersHandlers();
+      setupViewToggle();
+      loadSubjects();
+    });
+
+    function setupModalHandlers() {
+      document.getElementById('open-create-modal-btn').addEventListener('click', () => openSubjectModal());
+      document.getElementById('close-modal-btn').addEventListener('click', closeSubjectModal);
+      document.getElementById('cancel-modal-btn').addEventListener('click', closeSubjectModal);
+      document.getElementById('subject-form').addEventListener('submit', handleSubjectSubmit);
+      document.getElementById('refresh-btn').addEventListener('click', loadSubjects);
+
+      document.getElementById('subject-modal').addEventListener('click', (e) => {
+        if (e.target.classList.contains('bg-black/60')) closeSubjectModal();
+      });
+    }
+
+    function setupFiltersHandlers() {
+      document.getElementById('search-input').addEventListener('input', applyFilters);
+      document.getElementById('sort-select').addEventListener('change', applyFilters);
+    }
+
+    function setupViewToggle() {
+      const cardsBtn = document.getElementById('view-cards-btn');
+      const tableBtn = document.getElementById('view-table-btn');
+
+      cardsBtn.addEventListener('click', () => {
+        viewMode = 'cards';
+        cardsBtn.classList.remove('btn-ghost'); cardsBtn.classList.add('btn-primary');
+        tableBtn.classList.remove('btn-primary'); tableBtn.classList.add('btn-ghost');
+        renderSubjects();
+      });
+
+      tableBtn.addEventListener('click', () => {
+        viewMode = 'table';
+        tableBtn.classList.remove('btn-ghost'); tableBtn.classList.add('btn-primary');
+        cardsBtn.classList.remove('btn-primary'); cardsBtn.classList.add('btn-ghost');
+        renderSubjects();
+      });
+    }
+
+    async function loadSubjects() {
+      showLoader(true);
+      try {
+        subjects = await getSubjects();
+        applyFilters();
+      } catch (error) {
+        showMessage('Erro ao carregar disciplinas: ' + error.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function applyFilters() {
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      const sort = document.getElementById('sort-select').value;
+
+      filteredSubjects = subjects.filter(s => {
+        const name = (s.name || '').toLowerCase();
+        const prof = (s.professor || '').toLowerCase();
+        return name.includes(query) || prof.includes(query);
+      });
+
+      const sorters = {
+        name_asc: (a, b) => (a.name || '').localeCompare(b.name || ''),
+        name_desc: (a, b) => (b.name || '').localeCompare(a.name || ''),
+        carga_desc: (a, b) => (b.carga_horaria || 0) - (a.carga_horaria || 0),
+        carga_asc: (a, b) => (a.carga_horaria || 0) - (b.carga_horaria || 0),
+        peso_desc: (a, b) => (b.peso || 0) - (a.peso || 0),
+        peso_asc: (a, b) => (a.peso || 0) - (b.peso || 0)
+      };
+
+      filteredSubjects.sort(sorters[sort] || sorters.name_asc);
+      renderSubjects();
+    }
+
+    function renderSubjects() {
+      const emptyState = document.getElementById('subjects-empty-state');
+      const cardsWrap = document.getElementById('subjects-cards');
+      const tableWrap = document.getElementById('subjects-table-wrapper');
+      const count = document.getElementById('subjects-count');
+
+      count.textContent = `${filteredSubjects.length} disciplina${filteredSubjects.length === 1 ? '' : 's'}`;
+
+      if (!filteredSubjects.length) {
+        cardsWrap.innerHTML = '';
+        document.getElementById('subjects-tbody').innerHTML = '';
+        emptyState.classList.remove('hidden');
+        cardsWrap.classList.add('hidden');
+        tableWrap.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      if (viewMode === 'cards') {
+        cardsWrap.classList.remove('hidden');
+        tableWrap.classList.add('hidden');
+        cardsWrap.innerHTML = filteredSubjects.map(renderCard).join('');
+      } else {
+        cardsWrap.classList.add('hidden');
+        tableWrap.classList.remove('hidden');
+        renderTable();
+      }
+    }
+
+    function renderCard(subject) {
+      const arrow = '<span class="inline-block mx-1" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>';
+      const period = (subject.data_inicio || subject.data_fim)
+        ? `${formatDate(subject.data_inicio)} ${arrow} ${formatDate(subject.data_fim)}`
+        : 'Período não informado';
+      const safeName = (subject.name || '').replace(/'/g, "\\'");
+      return `
+        <article class="p-5 rounded-2xl border border-slate-700 bg-slate-900/55 flex flex-col gap-3">
+          <header class="flex items-start justify-between gap-3">
+            <div>
+              <h4 class="font-semibold text-lg leading-tight">${escapeHtml(subject.name)}</h4>
+              <p class="text-sm text-slate-400">${escapeHtml(subject.professor || 'Professor não informado')}</p>
+            </div>
+            <span class="chip">${subject.carga_horaria || 0}h</span>
+          </header>
+
+          ${subject.description ? `<p class="text-sm text-slate-300 line-clamp-3">${escapeHtml(subject.description)}</p>` : '<p class="text-sm text-slate-500 italic">Sem descrição.</p>'}
+
+          <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
+            <div><span class="text-slate-500">Peso:</span> <span class="text-slate-200">${subject.peso}</span></div>
+            <div><span class="text-slate-500">Período:</span> <span class="text-slate-200">${period}</span></div>
+          </div>
+
+          <footer class="flex justify-end gap-2 pt-2 border-t border-slate-700/70">
+            <button onclick="openSubjectModal(${subject.id})" class="btn-soft px-3 py-1 text-sm">Editar</button>
+            <button onclick="confirmDeleteSubject(${subject.id}, '${safeName}')" class="btn-danger px-3 py-1 text-sm">Excluir</button>
+          </footer>
+        </article>
+      `;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('subjects-tbody');
+      const arrow = '<span class="inline-block mx-1" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>';
+      tbody.innerHTML = filteredSubjects.map(subject => {
+        const period = (subject.data_inicio || subject.data_fim)
+          ? `${formatDate(subject.data_inicio)} ${arrow} ${formatDate(subject.data_fim)}`
+          : '-';
+        const safeName = (subject.name || '').replace(/'/g, "\\'");
+        return `
+          <tr class="hover:bg-slate-800/40">
+            <td class="px-4 py-3 font-medium">${escapeHtml(subject.name)}</td>
+            <td class="px-4 py-3 text-slate-300">${escapeHtml(subject.professor || '-')}</td>
+            <td class="px-4 py-3">${subject.carga_horaria}h</td>
+            <td class="px-4 py-3">${subject.peso}</td>
+            <td class="px-4 py-3 text-sm text-slate-300">${period}</td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex gap-2">
+                <button onclick="openSubjectModal(${subject.id})" class="btn-soft px-3 py-1 text-sm">Editar</button>
+                <button onclick="confirmDeleteSubject(${subject.id}, '${safeName}')" class="btn-danger px-3 py-1 text-sm">Excluir</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function openSubjectModal(subjectId = null) {
+      const modal = document.getElementById('subject-modal');
+      const title = document.getElementById('modal-title');
+      const form = document.getElementById('subject-form');
+
+      form.reset();
+      document.getElementById('subject-id').value = '';
+
+      if (subjectId) {
+        const subject = subjects.find(s => s.id === subjectId);
+        if (!subject) return;
+        title.textContent = 'Editar Disciplina';
+        document.getElementById('subject-id').value = subject.id;
+        document.getElementById('subject-name').value = subject.name || '';
+        document.getElementById('subject-professor').value = subject.professor || '';
+        document.getElementById('subject-carga').value = subject.carga_horaria || '';
+        document.getElementById('subject-peso').value = subject.peso || '';
+        document.getElementById('subject-data-inicio').value = subject.data_inicio || '';
+        document.getElementById('subject-data-fim').value = subject.data_fim || '';
+        document.getElementById('subject-description').value = subject.description || '';
+      } else {
+        title.textContent = 'Nova Disciplina';
+        document.getElementById('subject-carga').value = 60;
+        document.getElementById('subject-peso').value = 1;
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => document.getElementById('subject-name').focus(), 50);
+    }
+
+    function closeSubjectModal() {
+      document.getElementById('subject-modal').classList.add('hidden');
+    }
+
+    async function handleSubjectSubmit(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('subject-id').value;
+      const dataInicio = document.getElementById('subject-data-inicio').value || null;
+      const dataFim = document.getElementById('subject-data-fim').value || null;
+
+      const payload = {
+        name: document.getElementById('subject-name').value.trim(),
+        professor: document.getElementById('subject-professor').value.trim(),
+        carga_horaria: Number(document.getElementById('subject-carga').value),
+        peso: Number(document.getElementById('subject-peso').value),
+        description: document.getElementById('subject-description').value.trim(),
+        data_inicio: dataInicio,
+        data_fim: dataFim
+      };
+
+      if (!payload.name) return showMessage('Informe o nome da disciplina.', 'error');
+      if (payload.carga_horaria <= 0) return showMessage('Carga horária deve ser maior que zero.', 'error');
+      if (payload.peso <= 0) return showMessage('Peso deve ser maior que zero.', 'error');
+      if (dataInicio && dataFim && new Date(dataInicio) > new Date(dataFim)) {
+        return showMessage('Data de início não pode ser posterior à de término.', 'error');
+      }
+
+      showLoader(true);
+      try {
+        if (id) {
+          await updateSubject(id, payload);
+          showMessage('Disciplina atualizada com sucesso!');
+        } else {
+          await createSubject(payload);
+          showMessage('Disciplina criada com sucesso!');
+        }
+        closeSubjectModal();
+        await loadSubjects();
+      } catch (error) {
+        showMessage('Erro ao salvar disciplina: ' + error.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function confirmDeleteSubject(subjectId, subjectName) {
+      const confirmed = confirm(`Deseja realmente excluir a disciplina "${subjectName}"?\nIsso também removerá todas as tarefas vinculadas.`);
+      if (!confirmed) return;
+
+      showLoader(true);
+      try {
+        await deleteSubject(subjectId);
+        showMessage('Disciplina excluída com sucesso!');
+        await loadSubjects();
+      } catch (error) {
+        showMessage('Erro ao excluir disciplina: ' + error.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+  </script>
+</body>
+</html>

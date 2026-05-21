@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduTrack AI - Tarefas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen">
+  <nav class="sticky top-0 z-40 navbar-dark">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <span class="brand-mark" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <h1 class="text-2xl font-bold">EduTrack AI</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleTheme()" class="icon-btn" title="Alternar tema" aria-label="Alternar tema"><span id="theme-toggle-icon"></span></button>
+          <button onclick="logout()" class="btn-soft px-4 py-2 text-sm">Sair</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <section class="card p-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p class="text-sm text-slate-400">Produtividade</p>
+          <h2 class="text-3xl font-bold mt-1">Tarefas</h2>
+          <p class="text-slate-400 mt-1">Organize entregas, marque progresso e mantenha foco no que importa.</p>
+        </div>
+        <button id="open-create-task-btn" class="btn-primary px-5 py-3 inline-flex items-center gap-2">
+          <span class="icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+          Nova Tarefa
+        </button>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3 bg-slate-900/60 rounded-2xl p-3 border border-slate-700/60">
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('index.html')">Dashboard</button>
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('subjects.html')">Disciplinas</button>
+      <button class="nav-link btn-primary px-5 py-2.5 active" onclick="navigate('tasks.html')">Tarefas</button>
+    </div>
+
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <article class="metric-card p-4">
+        <p class="text-sm text-slate-400">Total</p>
+        <p id="total-tasks" class="text-3xl font-bold mt-1">0</p>
+      </article>
+      <article class="metric-card p-4">
+        <p class="text-sm text-slate-400">Pendentes</p>
+        <p id="pending-tasks" class="text-3xl font-bold mt-1">0</p>
+      </article>
+      <article class="metric-card p-4">
+        <p class="text-sm text-slate-400">Concluídas</p>
+        <p id="done-tasks" class="text-3xl font-bold mt-1">0</p>
+      </article>
+      <article class="metric-card p-4">
+        <p class="text-sm text-slate-400">Vencidas</p>
+        <p id="overdue-tasks" class="text-3xl font-bold mt-1 text-rose-400">0</p>
+      </article>
+    </section>
+
+    <section class="card p-6 space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <select id="subject-select"></select>
+        <input id="search-task-input" type="text" placeholder="Buscar por título...">
+        <select id="status-filter">
+          <option value="all">Status: Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="concluida">Concluídas</option>
+        </select>
+        <select id="sort-filter">
+          <option value="date_asc">Ordenar: Data (mais próxima)</option>
+          <option value="date_desc">Data (mais distante)</option>
+          <option value="title_asc">Título (A-Z)</option>
+          <option value="title_desc">Título (Z-A)</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <span id="tasks-context" class="text-sm text-slate-400">Selecione uma disciplina para ver suas tarefas.</span>
+        <button id="reload-tasks-btn" class="btn-ghost px-4 py-2 text-sm">Atualizar lista</button>
+      </div>
+
+      <div id="tasks-empty-state" class="hidden empty-state text-center py-10">
+        <div class="empty-illustration mx-auto mb-3" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        </div>
+        <h4 class="text-xl font-semibold">Nenhuma tarefa encontrada</h4>
+        <p class="text-slate-400 mt-2">Crie uma nova tarefa para acompanhar sua evolução.</p>
+        <button onclick="openTaskModal()" class="btn-primary mt-4 px-4 py-2 inline-flex items-center gap-2">
+          <span class="icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+          Criar tarefa
+        </button>
+      </div>
+
+      <div class="overflow-x-auto" id="tasks-table-wrapper">
+        <table class="min-w-full">
+          <thead class="table-head">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Título</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Descrição</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Data Prevista</th>
+              <th class="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-300">Status</th>
+              <th class="px-4 py-3 text-right text-xs uppercase tracking-wider text-slate-300">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tasks-tbody" class="divide-y divide-slate-700"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="task-modal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-lg modal-dark rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+          <h4 id="task-modal-title" class="text-xl font-bold">Nova Tarefa</h4>
+          <button id="close-task-modal-btn" class="text-slate-400 hover:text-slate-100 text-2xl leading-none" aria-label="Fechar">&times;</button>
+        </div>
+        <form id="task-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <input type="hidden" id="task-id">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="task-subject">Disciplina *</label>
+            <select id="task-subject" required></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="task-title">Título *</label>
+            <input id="task-title" type="text" required placeholder="Ex.: Lista de exercícios capítulo 3">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="task-description">Descrição</label>
+            <textarea id="task-description" rows="3" placeholder="Detalhes, instruções, links..."></textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1" for="task-date">Data prevista</label>
+              <input id="task-date" type="date">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="task-status">Status</label>
+              <select id="task-status">
+                <option value="pendente">Pendente</option>
+                <option value="concluida">Concluída</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-3 justify-end pt-2">
+            <button type="button" id="cancel-task-modal-btn" class="btn-ghost px-4 py-2">Cancelar</button>
+            <button type="submit" class="btn-primary px-4 py-2">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let subjects = [];
+    let tasks = [];
+    let filteredTasks = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('open-create-task-btn').addEventListener('click', () => openTaskModal());
+      document.getElementById('close-task-modal-btn').addEventListener('click', closeTaskModal);
+      document.getElementById('cancel-task-modal-btn').addEventListener('click', closeTaskModal);
+      document.getElementById('reload-tasks-btn').addEventListener('click', loadTasksForSelectedSubject);
+      document.getElementById('subject-select').addEventListener('change', loadTasksForSelectedSubject);
+      document.getElementById('task-form').addEventListener('submit', handleTaskSubmit);
+      document.getElementById('search-task-input').addEventListener('input', applyTaskFilters);
+      document.getElementById('status-filter').addEventListener('change', applyTaskFilters);
+      document.getElementById('sort-filter').addEventListener('change', applyTaskFilters);
+
+      document.getElementById('task-modal').addEventListener('click', (e) => {
+        if (e.target.classList.contains('bg-black/60')) closeTaskModal();
+      });
+
+      await loadSubjectsForTasks();
+    });
+
+    async function loadSubjectsForTasks() {
+      showLoader(true);
+      try {
+        subjects = await getSubjects();
+        const select = document.getElementById('subject-select');
+        const modalSelect = document.getElementById('task-subject');
+
+        if (!subjects.length) {
+          select.innerHTML = '<option value="">Sem disciplinas</option>';
+          modalSelect.innerHTML = '<option value="">Sem disciplinas</option>';
+          tasks = [];
+          renderMetrics([]);
+          renderTasks([]);
+          document.getElementById('tasks-context').textContent = 'Cadastre disciplinas antes de criar tarefas.';
+          showMessage('Cadastre disciplinas antes de criar tarefas.', 'info');
+          return;
+        }
+
+        const optionsHtml = subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        select.innerHTML = optionsHtml;
+        modalSelect.innerHTML = optionsHtml;
+        await loadTasksForSelectedSubject();
+      } catch (e) {
+        showMessage('Erro ao carregar disciplinas: ' + e.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function loadTasksForSelectedSubject() {
+      const subjectId = document.getElementById('subject-select').value;
+      if (!subjectId) {
+        tasks = [];
+        applyTaskFilters();
+        return;
+      }
+
+      showLoader(true);
+      try {
+        tasks = await getTasks(subjectId);
+        const subj = subjects.find(s => String(s.id) === String(subjectId));
+        document.getElementById('tasks-context').textContent = subj
+          ? `Mostrando tarefas de "${subj.name}"`
+          : '';
+        applyTaskFilters();
+      } catch (e) {
+        showMessage('Erro ao carregar tarefas: ' + e.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function applyTaskFilters() {
+      const search = document.getElementById('search-task-input').value.trim().toLowerCase();
+      const status = document.getElementById('status-filter').value;
+      const sort = document.getElementById('sort-filter').value;
+
+      filteredTasks = tasks.filter(task => {
+        const titleOk = (task.title || '').toLowerCase().includes(search);
+        const statusOk = status === 'all' ? true : task.status === status;
+        return titleOk && statusOk;
+      });
+
+      const sorters = {
+        date_asc: (a, b) => (new Date(a.data_prevista || '2999-12-31')) - (new Date(b.data_prevista || '2999-12-31')),
+        date_desc: (a, b) => (new Date(b.data_prevista || '1900-01-01')) - (new Date(a.data_prevista || '1900-01-01')),
+        title_asc: (a, b) => (a.title || '').localeCompare(b.title || ''),
+        title_desc: (a, b) => (b.title || '').localeCompare(a.title || '')
+      };
+
+      filteredTasks.sort(sorters[sort] || sorters.date_asc);
+
+      renderMetrics(tasks); // métricas baseadas em todas as tarefas da disciplina
+      renderTasks(filteredTasks);
+    }
+
+    function renderMetrics(list) {
+      const total = list.length;
+      const done = list.filter(t => t.status === 'concluida').length;
+      const pending = total - done;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const overdue = list.filter(t => {
+        if (t.status === 'concluida' || !t.data_prevista) return false;
+        const d = new Date(t.data_prevista);
+        return d < today;
+      }).length;
+
+      document.getElementById('total-tasks').textContent = total;
+      document.getElementById('done-tasks').textContent = done;
+      document.getElementById('pending-tasks').textContent = pending;
+      document.getElementById('overdue-tasks').textContent = overdue;
+    }
+
+    function renderTasks(list) {
+      const tbody = document.getElementById('tasks-tbody');
+      const empty = document.getElementById('tasks-empty-state');
+      const wrap = document.getElementById('tasks-table-wrapper');
+
+      if (!list.length) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        wrap.classList.add('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      wrap.classList.remove('hidden');
+
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      tbody.innerHTML = list.map(t => {
+        const isOverdue = t.status !== 'concluida' && t.data_prevista && new Date(t.data_prevista) < today;
+        const dateLabel = t.data_prevista ? formatDate(t.data_prevista) : '-';
+        const dateClass = isOverdue ? 'text-rose-400 font-semibold' : '';
+        const desc = t.description
+          ? `<span class="line-clamp-2 block max-w-xs text-slate-300 text-sm">${escapeHtml(t.description)}</span>`
+          : '<span class="text-slate-500 italic text-sm">—</span>';
+
+        return `
+          <tr class="hover:bg-slate-800/40">
+            <td class="px-4 py-3 font-medium">${escapeHtml(t.title)}</td>
+            <td class="px-4 py-3">${desc}</td>
+            <td class="px-4 py-3 ${dateClass}">${dateLabel}${isOverdue ? ' (atrasada)' : ''}</td>
+            <td class="px-4 py-3"><span class="${getStatusClass(t.status)}">${normalizeStatus(t.status)}</span></td>
+            <td class="px-4 py-3 text-right">
+              <div class="inline-flex gap-2">
+                <button onclick="toggleTaskStatus(${t.id}, '${t.status}')" class="btn-soft px-3 py-1 text-sm">${t.status === 'concluida' ? 'Reabrir' : 'Concluir'}</button>
+                <button onclick='openTaskModal(${JSON.stringify(t).replace(/'/g, "&#39;")})' class="btn-ghost px-3 py-1 text-sm">Editar</button>
+                <button onclick="confirmDeleteTask(${t.id}, '${(t.title || '').replace(/'/g, "\\'")}')" class="btn-danger px-3 py-1 text-sm">Excluir</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function openTaskModal(task = null) {
+      if (!subjects.length) {
+        showMessage('Cadastre uma disciplina antes de criar tarefas.', 'info');
+        return;
+      }
+
+      const modal = document.getElementById('task-modal');
+      const title = document.getElementById('task-modal-title');
+      const form = document.getElementById('task-form');
+      form.reset();
+      document.getElementById('task-id').value = '';
+
+      const currentSubjectId = document.getElementById('subject-select').value;
+      document.getElementById('task-subject').value = currentSubjectId || (subjects[0] && subjects[0].id) || '';
+
+      if (task && typeof task === 'object') {
+        title.textContent = 'Editar Tarefa';
+        document.getElementById('task-id').value = task.id;
+        document.getElementById('task-title').value = task.title || '';
+        document.getElementById('task-description').value = task.description || '';
+        document.getElementById('task-date').value = task.data_prevista || '';
+        document.getElementById('task-status').value = task.status || 'pendente';
+      } else {
+        title.textContent = 'Nova Tarefa';
+        document.getElementById('task-status').value = 'pendente';
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => document.getElementById('task-title').focus(), 50);
+    }
+
+    function closeTaskModal() {
+      document.getElementById('task-modal').classList.add('hidden');
+    }
+
+    async function handleTaskSubmit(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('task-id').value;
+      const subjectId = document.getElementById('task-subject').value;
+      if (!subjectId) return showMessage('Selecione uma disciplina.', 'error');
+
+      const payload = {
+        title: document.getElementById('task-title').value.trim(),
+        description: document.getElementById('task-description').value.trim(),
+        data_prevista: document.getElementById('task-date').value || null,
+        status: document.getElementById('task-status').value || 'pendente'
+      };
+
+      if (!payload.title) return showMessage('Título é obrigatório.', 'error');
+
+      showLoader(true);
+      try {
+        if (id) {
+          await updateTask(id, payload);
+          showMessage('Tarefa atualizada com sucesso!');
+        } else {
+          await createTask(subjectId, payload);
+          showMessage('Tarefa criada com sucesso!');
+        }
+        closeTaskModal();
+
+        // se mudou a disciplina selecionada no modal, atualizar select principal
+        if (subjectId !== document.getElementById('subject-select').value) {
+          document.getElementById('subject-select').value = subjectId;
+        }
+        await loadTasksForSelectedSubject();
+      } catch (err) {
+        showMessage('Erro ao salvar tarefa: ' + err.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function toggleTaskStatus(taskId, currentStatus) {
+      const next = currentStatus === 'concluida' ? 'pendente' : 'concluida';
+      showLoader(true);
+      try {
+        await updateTask(taskId, { status: next });
+        showMessage(next === 'concluida' ? 'Tarefa marcada como concluída!' : 'Tarefa reaberta.');
+        await loadTasksForSelectedSubject();
+      } catch (e) {
+        showMessage('Erro ao atualizar status: ' + e.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function confirmDeleteTask(taskId, title) {
+      const ok = confirm(`Excluir a tarefa "${title}"? Essa ação não pode ser desfeita.`);
+      if (!ok) return;
+
+      showLoader(true);
+      try {
+        await deleteTask(taskId);
+        showMessage('Tarefa excluída com sucesso!');
+        await loadTasksForSelectedSubject();
+      } catch (e) {
+        showMessage('Erro ao excluir tarefa: ' + e.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+  </script>
+</body>
+</html>

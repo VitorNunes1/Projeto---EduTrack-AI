@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduTrack AI - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen text-zinc-100">
+  <nav class="sticky top-0 z-40 navbar-dark">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-3">
+          <span class="brand-mark" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 3.6 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg>
+          </span>
+          <h1 class="text-xl md:text-2xl font-semibold tracking-wide">EduTrack AI</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleTheme()" class="icon-btn" title="Alternar tema" aria-label="Alternar tema">
+            <span id="theme-toggle-icon"></span>
+          </button>
+          <button onclick="logout()" class="btn-soft px-4 py-2 text-sm">Sair</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <section class="card p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+          <p class="text-sm text-slate-400">Visão geral acadêmica</p>
+          <h2 class="text-2xl md:text-3xl font-bold mt-1">Seu progresso, com inteligência</h2>
+          <p class="text-slate-400 mt-2">Acompanhe disciplinas, desempenho e recomendações para priorizar seus estudos.</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button class="btn-primary px-4 py-2" onclick="navigate('subjects.html')">Gerenciar disciplinas</button>
+          <button class="btn-ghost px-4 py-2" onclick="navigate('tasks.html')">Gerenciar tarefas</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex flex-wrap gap-3 bg-slate-900/60 rounded-2xl p-3 border border-slate-700/60">
+      <button class="nav-link btn-primary px-5 py-2.5 active" onclick="navigate('index.html')">Dashboard</button>
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('subjects.html')">Disciplinas</button>
+      <button class="nav-link btn-ghost px-5 py-2.5" onclick="navigate('tasks.html')">Tarefas</button>
+    </div>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <article class="metric-card p-5">
+        <p class="text-sm text-slate-400">Progresso Geral</p>
+        <h3 id="weighted-progress" class="text-3xl font-bold mt-2">0%</h3>
+      </article>
+      <article class="metric-card p-5">
+        <p class="text-sm text-slate-400">Carga Horária Total</p>
+        <h3 id="total-carga" class="text-3xl font-bold mt-2">0h</h3>
+      </article>
+      <article class="metric-card p-5">
+        <p class="text-sm text-slate-400">Tarefas Concluídas</p>
+        <h3 id="tasks-done" class="text-3xl font-bold mt-2">0</h3>
+      </article>
+      <article class="metric-card p-5">
+        <p class="text-sm text-slate-400">Tarefas Pendentes</p>
+        <h3 id="tasks-pending" class="text-3xl font-bold mt-2">0</h3>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <article class="card p-6 lg:col-span-3">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold">Progresso por Disciplina</h3>
+          <span class="chip">Atualizado agora</span>
+        </div>
+        <canvas id="subjectsChart" height="220"></canvas>
+      </article>
+
+      <article class="card p-6 lg:col-span-2 space-y-5">
+        <div>
+          <p class="text-sm text-slate-400">Previsão de conclusão</p>
+          <h3 id="predicted-date" class="text-2xl font-bold mt-1">--</h3>
+          <p id="prediction-assumption" class="text-sm text-slate-400 mt-2">Aguardando cálculo...</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-700 bg-slate-900/50">
+          <p class="text-xs uppercase tracking-wide text-slate-400">Dias restantes</p>
+          <p id="days-remaining" class="text-3xl font-bold mt-1">--</p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-indigo-400/30 bg-indigo-500/10">
+          <p class="text-xs uppercase tracking-wide text-indigo-200">Insight IA</p>
+          <p id="smart-insight" class="text-sm mt-2 text-slate-100">Sem dados suficientes para recomendação.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">Disciplinas em foco</h3>
+        <button class="btn-ghost px-3 py-2 text-sm" onclick="navigate('subjects.html')">Ver todas</button>
+      </div>
+      <div id="subjects-list" class="space-y-3"></div>
+      <div id="subjects-empty-state" class="hidden empty-state p-10 text-center">
+        <p class="text-lg font-semibold">Nenhuma disciplina encontrada</p>
+        <p class="text-slate-400 mt-1">Cadastre disciplinas para iniciar seu acompanhamento.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+
+    async function loadDashboard() {
+      showLoader(true);
+      try {
+        const data = await getDashboard();
+
+        const weighted = Number(data?.weighted_progress || 0);
+        const totalCarga = Number(data?.total_carga_horaria || 0);
+        const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
+        const prediction = data?.prediction || {};
+
+        const totalTasks = subjects.reduce((acc, s) => acc + (s?.tasks_info?.total_tasks || 0), 0);
+        const doneTasks = subjects.reduce((acc, s) => acc + (s?.tasks_info?.completed_tasks || 0), 0);
+        const pendingTasks = Math.max(totalTasks - doneTasks, 0);
+
+        document.getElementById('weighted-progress').textContent = `${weighted}%`;
+        document.getElementById('total-carga').textContent = `${totalCarga}h`;
+        document.getElementById('tasks-done').textContent = doneTasks;
+        document.getElementById('tasks-pending').textContent = pendingTasks;
+        document.getElementById('predicted-date').textContent = prediction.predicted_date || '--';
+        document.getElementById('prediction-assumption').textContent = prediction.assumption || 'Sem premissas disponíveis.';
+        document.getElementById('days-remaining').textContent = prediction.days_remaining ?? '--';
+
+        const chartData = {
+          labels: subjects.map(s => s.name),
+          values: subjects.map(s => s.progress_pct || 0)
+        };
+        initCharts('subjectsChart', chartData, 'doughnut');
+
+        const insightEl = document.getElementById('smart-insight');
+        if (!subjects.length) {
+          insightEl.textContent = 'Comece criando disciplinas e tarefas para gerar recomendações inteligentes.';
+        } else {
+          const worst = [...subjects].sort((a, b) => (a.progress_pct || 0) - (b.progress_pct || 0))[0];
+          const best = [...subjects].sort((a, b) => (b.progress_pct || 0) - (a.progress_pct || 0))[0];
+          insightEl.textContent = `Priorize "${worst.name}" (menor progresso: ${worst.progress_pct}%). Continue o ritmo em "${best.name}" (${best.progress_pct}%).`;
+        }
+
+        renderSubjects(subjects);
+      } catch (error) {
+        showMessage('Erro ao carregar dashboard: ' + error.message, 'error');
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function renderSubjects(subjects) {
+      const list = document.getElementById('subjects-list');
+      const empty = document.getElementById('subjects-empty-state');
+
+      if (!subjects.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+
+      list.innerHTML = subjects.map(subject => {
+        const pct = Number(subject.progress_pct || 0);
+        const total = Number(subject.tasks_info?.total_tasks || 0);
+        const done = Number(subject.tasks_info?.completed_tasks || 0);
+
+        return `
+          <article class="p-4 rounded-xl border border-slate-700 bg-slate-900/55">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 class="font-semibold text-lg">${subject.name}</h4>
+                <p class="text-sm text-slate-400">${done}/${total} tarefas concluídas${subject.professor ? ' • Prof. ' + subject.professor : ''}</p>
+              </div>
+              <div class="min-w-[120px] text-right">
+                <p class="text-2xl font-bold">${pct}%</p>
+                <div class="w-full h-2 rounded-full bg-slate-700 mt-1">
+                  <div class="h-2 rounded-full bg-indigo-400" style="width:${pct}%"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
